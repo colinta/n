@@ -14,8 +14,6 @@ function n () {
     echo "Usage: n folder1 [folder2 [folder3 ...]]"
     return 1
   else
-    # if [[ "$0" ]]
-    echo "$0"
     __n_next
   fi
 }
