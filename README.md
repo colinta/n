@@ -48,6 +48,9 @@ The full list of commands is:
 Examples
 ========
 
+ list
+------
+
 ```
 ~ > b subl
 Packages > n MoveText FileDiffs SimpleMovement
@@ -56,10 +59,22 @@ MoveText > n --list
  * MoveText
    FileDiffs
    SimpleMovement
+```
+
+ next / prev
+-------------
+
+```
 MoveText > n
 FileDiffs > n --prev
 MoveText > n --next
 FileDiffs > cd ..
+```
+
+ reset / curr
+ -------------
+
+```
 Packages > n --curr
 FileDiffs > n
 SimpleMovement > n --list
@@ -69,6 +84,12 @@ SimpleMovement > n --list
  * SimpleMovement
 SimpleMovement > n --reset
 Packages > n
+```
+
+ shell
+-------
+
+```
 MoveText > n --shell
 >>> in MoveText (1 of 3) <<<
 MoveText > logout
@@ -77,7 +98,13 @@ FileDiffs > logout
 >>> in SimpleMovement (3 of 3) <<<
 SimpleMovement > logout
 <<< AND WE'RE BACK >>>
-MoveText > n -x 'ls -1' 'echo HI'
+```
+
+ exec
+------
+
+```
+MoveText > n -exec 'ls -1' 'echo HI'
 >>> in MoveText (1 of 3) <<<
 move_text.py
 ...
@@ -91,6 +118,12 @@ simple_movements.py
 ...
 HI
 <<< AND WE'RE BACK >>>
+```
+
+ save / restore
+----------------
+
+```
 MoveText > cd ..
 Packages > n -s
 Packages > n -r
