@@ -209,6 +209,17 @@ function __n_m() {
 }
 
 function __n_stop() {
+  if [[ ! -f "$__n_history" ]]; then
+    if [[ -n "$__n_orighist" ]]; then
+      echo -e "\033[31;1mABORTING\033[0m"
+      HISTFILE="$__n_orighist"
+      return 1
+    else
+      echo "No .n_history file found"
+      return 1
+    fi
+  fi
+
   HISTFILE="$__n_orighist"
   history -r
 
