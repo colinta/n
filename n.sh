@@ -191,16 +191,17 @@ function __n_l() {
 function __n_macro() {
   __n_i=0
   __n_curr
-  __n_hist="$HISTFILE"
-  history -a
+  __n_orighist="$HISTFILE"
+  __n_history="$__n_pwd/.n_history"
 
-  if [[ -f "$HISTFILE" ]]; then
-    rm "$HISTFILE"
-  fi
+  history -a
   HISTFILE="$__n_pwd/.n_history"
 
+  if [[ -f "$__n_history" ]]; then
+    rm "$__n_history"
+  fi
+
   echo "Recording history in ${HISTFILE/$HOME/~}"
-  history -c
 }
 
 function __n_m() {
@@ -208,11 +209,10 @@ function __n_m() {
 }
 
 function __n_stop() {
-  n_history="$HISTFILE"
-  HISTFILE="$__n_hist"
+  HISTFILE="$__n_orighist"
   history -r
 
-  cat "$n_history"
+  cat "$__n_history"
   local confirm
   echo
   echo -n -e "\033[1mEverything look ok?\033[0m [y]"
@@ -226,7 +226,7 @@ function __n_stop() {
 
       i=$(($i + 1))
       echo -e ">>> \033[34;1min $folder\033[0m ($i of ${#__n_folders[@]}) <<<"
-      source "$n_history"
+      source "$__n_history"
       echo -e "<<< \033[34;1mDONE\033[0m >>>"
       echo -n "[press enter]"
       read
@@ -237,8 +237,8 @@ function __n_stop() {
     echo -e "<<< \033[31;1mABORTING\033[0m >>>"
   fi
 
-  if [[ -f "$n_history" ]]; then
-    rm "$n_history"
+  if [[ -f "$__n_history" ]]; then
+    rm "$__n_history"
   fi
 
   __n_curr
