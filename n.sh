@@ -188,4 +188,66 @@ function __n_l() {
   __n_list "$@"
 }
 
+function __n_macro() {
+  __n_i=0
+  __n_curr
+  __n_hist="$HISTFILE"
+  history -a
+
+  if [[ -f "$HISTFILE" ]]; then
+    rm "$HISTFILE"
+  fi
+  HISTFILE="$__n_pwd/.n_history"
+
+  echo "Recording history in ${HISTFILE/$HOME/~}"
+  history -c
+}
+
+function __n_m() {
+  __n_macro "$@"
+}
+
+function __n_stop() {
+  n_history="$HISTFILE"
+  HISTFILE="$__n_hist"
+  history -r
+
+  cat "$n_history"
+  local confirm
+  echo
+  echo -n -e "\033[1mEverything look ok?\033[0m [y]"
+  read confirm
+  if [[ -z "$confirm" || $confirm = "y" ]]; then
+    local folder
+    local i
+    for folder in "${__n_folders[@]}"
+    do
+      cd "$__n_pwd/$folder"
+
+      i=$(($i + 1))
+      echo -e ">>> \033[34;1min $folder\033[0m ($i of ${#__n_folders[@]}) <<<"
+      source "$n_history"
+      echo -e "<<< \033[34;1mDONE\033[0m >>>"
+      echo -n "[press enter]"
+      read
+    done
+    __n_curr
+    echo -e "<<< \033[34;1mAND WE'RE BACK\033[0m >>>"
+  else
+    echo -e "<<< \033[31;1mABORTING\033[0m >>>"
+  fi
+
+  if [[ -f "$n_history" ]]; then
+    rm "$n_history"
+  fi
+
+  __n_curr
+  return 0
+
+}
+
+function __n_k() {
+  __n_stop "$@"
+}
+
 export -f n

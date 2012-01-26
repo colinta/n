@@ -43,6 +43,11 @@ The full list of commands is:
 * `n --exec $@`
   Goes to each folder and executes the commands in $@ in each.
   You should *quote* these commands.  See example below.
+* `n --macro $@` or `n -m`
+  Goes to the first folder and begins to record a macro.  Uses a history file (root/.n_history), so ESC sequences might get mangled.
+* `n --stop $@` or `n -k`
+  Stops recording and sources the .n_history file in each folder.
+  This is a very cool feature if your shell-foo is strong.
 
 
 Examples
@@ -126,12 +131,43 @@ HI
 ```
 MoveText > cd ..
 Packages > n -s
+Packages > n SimpleMovement FileDiffs
+SimpleMovement > n --list
+~/Library/Application Support/Sublime Text 2/Packages
+ * SimpleMovement
+   FileDiffs
+SimpleMovement > cd ..
 Packages > n -r
 MoveText > n --list
 ~/Library/Application Support/Sublime Text 2/Packages
  * MoveText
    FileDiffs
    SimpleMovement
+```
+
+ macro
+-------
+```
+MoveText > n --macro
+Recording history in ~/Library/Application Support/Sublime Text 2/Packages/.new_history
+MoveText > echo test
+MoveText > n --stop
+echo test
+
+Everything look ok? [y]
+>>> in MoveText (1 of 3) <<<
+test
+<<< DONE >>>
+[press enter]
+>>> in FileDiffs (2 of 3) <<<
+test
+<<< DONE >>>
+[press enter]
+>>> in SimpleMovement (3 of 3) <<<
+test
+<<< DONE >>>
+[press enter]
+<<< AND WE'RE BACK >>>
 ```
 
 Enjoy!
