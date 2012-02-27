@@ -1,11 +1,23 @@
 
 function n () {
+  local cmd
+
   if [[ -n "$1" && "${1:0:2}" = "--" ]]; then
     cmd="__n_${1:2}"
+    if [[ -z `type -t $cmd` ]]; then
+      echo "Unknown command \"n $1\"" >&2
+      return 1
+    fi
+
     $cmd "${@:2}"
     return $?
   elif [[ -n "$1" && "${1:0:1}" = "-" ]]; then
     cmd="__n_${1:1}"
+    if [[ -z `type -t $cmd` ]]; then
+      echo "Unknown command \"n $1\"" >&2
+      return 1
+    fi
+
     $cmd "${@:2}"
     return $?
   elif [[ -n "$@" ]]; then
@@ -18,12 +30,36 @@ function n () {
   fi
 }
 
+function __n_help() {
+  echo "Commands:"
+  echo ""
+  echo "--help, -h    Show this message."
+  echo "--set \$@     Set the folders to \$@.  Default action when \$@ is given."
+  echo "--curr, -c    Go back to the current folder."
+  echo "--next, -n    Go to the next folder.  Default action when no arguments are given."
+  echo "--prev, -p    Go to the previous folder."
+  echo "--reset, -0   Go back to the \"root\" folder and reset the loop."
+  echo "--save, -s    Save the current folders to .n_saved"
+  echo "--recall, -r  Recall folders from .n_saved"
+  echo "--shell, -i   Run an interactive shell in each folder."
+  echo "--exec, -x    Run a command in each folder."
+  echo "--list, -l    List the folders."
+  echo "--macro, -m   Start recording a macro.  Starts in the first folder."
+  echo "--stop, -k    Stop recording a macro and execute in all folders.  Skips the first folder."
+}
+
+function __n_h {
+  __n_help "$@"
+}
+
+
 function __n_set() {
   __n_folders=("$@")
   __n_pwd="$PWD"
   __n_i=0
   __n_curr
 }
+
 
 function __n_curr() {
   cd "$__n_pwd"
@@ -46,6 +82,7 @@ function __n_next() {
   __n_i=$(($__n_i + 1))
 
   if [[ "$__n_i" -ge "${#__n_folders[@]}" ]]; then
+
     __n_i=-1
     return
   fi
@@ -114,7 +151,7 @@ function __n_recall() {
   if [[ ! -f "$n_saved" ]]; then
     echo ".n_saved not found"
   else
-    __n_folders=(`cat .n_saved`)
+    IFS=$'\n' __n_folders=(`cat .n_saved`)
     __n_pwd="$PWD"
     __n_i=0
   fi
