@@ -40,14 +40,14 @@ function __n_help() {
   echo "--curr, -c    Go back to the current folder."
   echo "--next, -n    Go to the next folder.  Default action when no arguments are given."
   echo "--prev, -p    Go to the previous folder."
-  echo "--goto, -g    Go to a specific folder (by index)."
+  echo "--goto, -g    Go to a specific folder (0-indexed)."
   echo "--reset, -0   Go back to the \"root\" folder and reset the loop."
   echo "--save, -s    Save the current folders to .n_saved"
   echo "--recall, -r  Recall folders from .n_saved"
   echo "--shell, -i   Run an interactive shell in each folder."
   echo "--exec, -x    Run a command in each folder."
-  echo "--list, -l    List the folders."
-  echo "--show        Show the folders, marking the current folder."
+  echo "--list, -l    List the folders, one folder per line. Suitable for piping into STDOUT."
+  echo "--show        Show the folders, marking the current folder and showing the --goto index."
   echo "--macro, -m   Start recording a macro.  Starts in the first folder."
   echo "--stop, -k    Stop recording a macro and execute in all folders.  Skips the first folder."
 }
@@ -241,9 +241,13 @@ function __n_x {
 function __n_show() {
   local folder
   local i
+  local count
+  local padding
   local indent
 
   i=0
+  count="${#__n_folders[@]}"
+
   for folder in "${__n_folders[@]}"
   do
     if [[ $i -eq $__n_i ]]; then
@@ -252,14 +256,13 @@ function __n_show() {
       indent="  "
     fi
 
-    if [[ -n "$1" ]]; then
-      if [[ $i -lt 10 ]]; then
-        indent=$indent" "
-      fi
-      indent=$indent"$i. "
+    if [[ $count -gt 9 && $i -lt 10 ]]; then
+      padding=' '
+    else
+      padding=''
     fi
 
-    echo "$indent$folder"
+    echo "$indent$padding$i. $folder"
     i=$(($i + 1))
   done
   return 0
