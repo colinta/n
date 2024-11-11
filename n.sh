@@ -10,6 +10,8 @@ function n () {
 
     $cmd "${@:2}"
     return $?
+  elif [[ "${1:0:1}" = "-" && "${1:1}" =~ ^[0-9]+$ ]]; then
+    __n_goto "${1:1}"
   elif [[ "${1:0:1}" = "-" ]]; then
     cmd="__n_${1:1}"
     if [[ -z `type -t $cmd` ]]; then
@@ -41,7 +43,8 @@ function __n_help() {
   echo "--next, -n    Go to the next folder.  Default action when no arguments are given."
   echo "--prev, -p    Go to the previous folder."
   echo "--goto, -g    Go to a specific folder (0-indexed)."
-  echo "--reset, -0   Go back to the \"root\" folder and reset the loop."
+  echo "-0, -1, …[n]  Alias for --goto [n]"
+  echo "--reset       Go back to the \"root\" folder and reset the loop."
   echo "--save, -s    Save the current folders to .n_saved"
   echo "--recall, -r  Recall folders from .n_saved"
   echo "--shell, -i   Run an interactive shell in each folder."
@@ -133,10 +136,6 @@ function __n_p() {
 function __n_reset() {
   cd "$__n_pwd"
   __n_i=-1
-}
-
-function __n_0() {
-  __n_reset "$@"
 }
 
 function __n_save() {
