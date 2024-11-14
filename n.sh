@@ -10,6 +10,8 @@ function n () {
 
     $cmd "${@:2}"
     return $?
+  elif [[ "$1" = "-" ]]; then
+    __n_prev
   elif [[ "${1:0:1}" = "-" && "${1:1}" =~ ^[0-9]+$ ]]; then
     __n_goto "${1:1}"
   elif [[ "${1:0:1}" = "-" ]]; then
