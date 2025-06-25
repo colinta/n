@@ -14,6 +14,8 @@ function n () {
     __n_prev
   elif [[ "${1:0:1}" = "-" && "${1:1}" =~ ^[0-9]+$ ]]; then
     __n_goto "${1:1}"
+  elif [[ $1 =~ ^[0-9]+$ ]]; then
+    __n_goto $1
   elif [[ "${1:0:1}" = "-" ]]; then
     cmd="__n_${1:1}"
     if [[ -z `type -t $cmd` ]]; then
@@ -26,7 +28,7 @@ function n () {
   elif [[ -n "$@" ]]; then
     __n_set "$@"
   elif [[ -z "$__n_folders" ]]; then
-    echo "Usage: n folder1 [folder2 [folder3 ...]]"
+    __n_help
     return 1
   else
     __n_next
@@ -39,22 +41,44 @@ function __n_help() {
   echo
   echo "Commands:"
   echo ""
-  echo "--help, -h    Show this message."
-  echo "--set \$@     Set the folders to \$@.  Default action when \$@ is given."
-  echo "--curr, -c    Go back to the current folder."
-  echo "--next, -n    Go to the next folder.  Default action when no arguments are given."
-  echo "--prev, -p    Go to the previous folder."
-  echo "--goto, -g    Go to a specific folder (0-indexed)."
-  echo "-0, -1, …[n]  Alias for --goto [n]"
-  echo "--reset       Go back to the \"root\" folder and reset the loop."
-  echo "--save, -s    Save the current folders to .n_saved"
-  echo "--recall, -r  Recall folders from .n_saved"
-  echo "--shell, -i   Run an interactive shell in each folder."
-  echo "--exec, -x    Run a command in each folder."
-  echo "--list, -l    List the folders, one folder per line. Suitable for piping into STDOUT."
-  echo "--show        Show the folders, marking the current folder and showing the --goto index."
-  echo "--macro, -m   Start recording a macro.  Starts in the first folder."
-  echo "--stop, -k    Stop recording a macro and execute in all folders.  Skips the first folder."
+  echo "Assign folders to iterate over:"
+  echo "    n path/to/folder1 path/to/folder2"
+  echo ""
+  echo "Run a command in every folder:"
+  echo "    n -x cmd"
+  echo ""
+  echo "Go to the next folder:"
+  echo "    n"
+  echo "    # returns 1 if the folder does not exist"
+  echo "    # returns -1 when all folders have been visited (useful for \`while n ; do …\`)"
+  echo ""
+  echo "Go to the prev folder:"
+  echo "    n -  # or n -p / n --prev"
+  echo "    # returns 1 if the folder does not exist"
+  echo "    # returns -1 when exiting the first folder"
+  echo ""
+  echo "Save / Recall:"
+  echo "    n -s  # n --save"
+  echo "    n -r  # n --recall"
+  echo ""
+  echo "All commands:"
+  echo "    n \$@, --set \$@  Set the folders to \$@."
+  echo "    n --add \$@      Add folder(s) to the list."
+  echo "    n -c, --curr    Go back to the current folder."
+  echo "    n -n, --next    Go to the next folder.  Default action when no arguments are given."
+  echo "    n -p, --prev    Go to the previous folder."
+  echo "    n -g, --goto    Go to a specific folder (0-indexed)."
+  echo "    n -0, -1, …[n]  Alias for --goto [n]"
+  echo "    n --reset       Go back to the \"root\" folder and reset the loop."
+  echo "    n -s, --save    Save the current folders to .n_saved"
+  echo "    n -r, --recall  Recall folders from .n_saved"
+  echo "    n -i, --shell   Run an interactive shell in each folder."
+  echo "    n -x, --exec    Run a command in each folder."
+  echo "    n -l, --list    List the folders, one folder per line. Suitable for piping into STDOUT."
+  echo "    n --show        Show the folders, marking the current folder and showing the --goto index."
+  echo "    n -m, --macro   Start recording a macro.  Starts in the first folder."
+  echo "    n -k, --stop    Stop recording a macro and execute in all folders.  Skips the first folder."
+  echo "    n -h, --help    Show this message."
 }
 
 function __n_h {
@@ -69,15 +93,33 @@ function __n_set() {
   __n_curr
 }
 
+function __n_add() {
+  if [[ -z $__n_folders ]]; then
+    __n_folders=("$@")
+  else
+    __n_folders=("${__n_folders[@]}" "$@")
+  fi
+  __n_pwd="$PWD"
+  __n_i=-1
+  __n_curr
+}
+
+function __n_a() {
+  __n_add "$@"
+}
 
 function __n_curr() {
   cd "$__n_pwd"
 
   if [[ "$__n_i" -eq -1 ]]; then
-    return
+    return -1
   fi
 
-  cd "${__n_folders[$__n_i]}" > /dev/null
+  if [[ -d "${__n_folders[$__n_i]}" ]]; then
+    cd "${__n_folders[$__n_i]}" > /dev/null
+  else
+    return 1
+  fi
 }
 
 function __n_c {
@@ -89,7 +131,11 @@ function __n_goto() {
   if [[ -n "$1" ]]; then
     __n_i=$1
     cd "$__n_pwd"
-    cd "${__n_folders[$__n_i]}" > /dev/null
+    if [[ -d "${__n_folders[$__n_i]}" ]]; then
+      cd "${__n_folders[$__n_i]}" > /dev/null
+    else
+      return 1
+    fi
   else
     __n_list "1"
   fi
@@ -106,10 +152,14 @@ function __n_next() {
 
   if [[ "$__n_i" -ge "${#__n_folders[@]}" ]]; then
     __n_i=-1
-    return
+    return -1
   fi
 
-  cd "${__n_folders[$__n_i]}" > /dev/null
+  if [[ -d "${__n_folders[$__n_i]}" ]]; then
+    cd "${__n_folders[$__n_i]}" > /dev/null
+  else
+    return 1
+  fi
 }
 
 function __n_n() {
@@ -123,12 +173,16 @@ function __n_prev() {
     __n_i="${#__n_folders[@]}"
   elif [[ "$__n_i" -eq 0 ]]; then
     __n_i=-1
-    return
+    return -1
   fi
 
   __n_i=$(($__n_i - 1))
 
-  cd "${__n_folders[$__n_i]}" > /dev/null
+  if [[ -d "${__n_folders[$__n_i]}" ]]; then
+    cd "${__n_folders[$__n_i]}" > /dev/null
+  else
+    return 1
+  fi
 }
 
 function __n_p() {
@@ -163,6 +217,11 @@ function __n_s() {
   __n_save "$@"
 }
 
+# alias for recall
+function __n_restore() {
+  __n_recall "$@"
+}
+
 function __n_recall() {
   local folder
   local n_saved
@@ -188,6 +247,7 @@ function __n_r() {
 function __n_shell() {
   local folder
   local i
+  local pwd="$PWD"
   for folder in "${__n_folders[@]}"
   do
     i=$(($i + 1))
@@ -199,6 +259,7 @@ function __n_shell() {
   if [[ -z $QUIET ]]; then
     echo -e "<<< \033[34;1mAND WE'RE BACK\033[0m >>>"
   fi
+  cd "$pwd"
   return 0
 }
 
@@ -217,20 +278,22 @@ function __n_exec() {
       echo -e ">>> \033[34;1min $folder\033[0m ($i of ${#__n_folders[@]}) <<<"
     fi
     for cmd in "$@"; do
-      if [[ -z $QUIET ]]; then
-        cd "$__n_pwd"
-        cd "$folder"
-      else
-        cd "$__n_pwd" 1>&2 > /dev/null
-        cd "$folder"  1>&2 > /dev/null
-      fi
+      cd "$__n_pwd" 1>&2 > /dev/null
+      cd "$folder"  1>&2 > /dev/null
       eval $cmd
+      local status=$?
+      if [[ $status -ne 0 ]]; then
+        if [[ -n $QUIET ]]; then
+          echo -e ">>> \033[34;1min $folder\033[0m ($i of ${#__n_folders[@]})"
+        fi
+        echo -e "... \033[33m$cmd\033[0m\n... returned \033[31m$status\033[0m"
+      fi
     done
   done
   if [[ -z $QUIET ]]; then
     echo -e "<<< \033[34;1mAND WE'RE BACK\033[0m >>>"
   fi
-  __n_curr
+  cd "$pwd"
   return 0
 }
 
